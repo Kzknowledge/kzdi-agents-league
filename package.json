@@ -32,9 +32,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Kzknowledge/kzdi-talent-os"
+    "url": "https://github.com/Kzknowledge/kzdi-agents-league"
   },
   "dependencies": {
+    "axios": "^1.6.0",
     "dotenv": "^16.0.3",
     "node-fetch": "^3.3.0",
     "telegram": "^2.0.0",
@@ -45,8 +46,7 @@
     "eslint": "^8.51.0"
   },
   "bugs": {
-    "url": "https://github.com/Kzknowledge/kzdi-talent-os/issues"
+    "url": "https://github.com/Kzknowledge/kzdi-agents-league/issues"
   },
-  "homepage": "https://github.com/Kzknowledge/kzdi-talent-os#readme"
+  "homepage": "https://github.com/Kzknowledge/kzdi-agents-league#readme"
 }
-
