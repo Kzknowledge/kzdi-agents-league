@@ -14,16 +14,16 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 18.x
-          cache: npm
+          node-version: 24.x
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
+        continue-on-error: false
 
       - name: Run security audit
         run: npm audit --production
@@ -44,16 +44,16 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 18.x
-          cache: npm
+          node-version: 24.x
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
+        continue-on-error: false
 
       - name: Run tests
         run: npm test
@@ -66,16 +66,16 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 18.x
-          cache: npm
+          node-version: 24.x
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
+        continue-on-error: false
 
       - name: Run dry run
         env:
@@ -91,20 +91,20 @@ jobs:
   build:
     runs-on: ubuntu-latest
     name: Build
-    needs: [quality, test]
+    needs: [quality, test, dry-run]
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 18.x
-          cache: npm
+          node-version: 24.x
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
+        continue-on-error: false
 
       - name: Build project
         run: npm run build
@@ -126,16 +126,16 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 18.x
-          cache: npm
+          node-version: 24.x
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
+        continue-on-error: false
 
       - name: Deploy to production
         env:
@@ -148,12 +148,35 @@ jobs:
           NODE_ENV: production
         run: npm start
 
+  # Notify on success
+  notify-success:
+    runs-on: ubuntu-latest
+    name: Notify Success
+    if: success() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    needs: [quality, test, dry-run, build]
+
+    steps:
+      - name: Send Telegram notification
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            ✅ KZDI Talent OS CI/CD Passed
+            
+            Repository: ${{ github.repository }}
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            
+            🔗 ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        continue-on-error: true
+
   # Notify on failure
   notify-failure:
     runs-on: ubuntu-latest
     name: Notify Failure
     if: failure()
-    needs: [quality, test, build, deploy]
+    needs: [quality, test, dry-run, build, deploy]
 
     steps:
       - name: Send Telegram notification
@@ -168,27 +191,5 @@ jobs:
             Branch: ${{ github.ref_name }}
             Commit: ${{ github.sha }}
             
-            Check: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            🔗 ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         continue-on-error: true
-
-  # Notify on success
-  notify-success:
-    runs-on: ubuntu-latest
-    name: Notify Success
-    if: success()
-    needs: build
-
-    steps:
-      - name: Send Telegram notification
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
-          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          message: |
-            ✅ KZDI Talent OS CI/CD Passed
-            
-            Repository: ${{ github.repository }}
-            Branch: ${{ github.ref_name }}
-            Commit: ${{ github.sha }}
-        continue-on-error: true
-
