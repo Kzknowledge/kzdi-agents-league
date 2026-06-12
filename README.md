@@ -213,13 +213,13 @@ await notifyBatchComplete([result1, result2, result3]);
 |----------|----------|-------------|
 | `FOUNDRY_IQ_KEY` | ✅ Yes | Azure Foundry API key |
 | `FOUNDRY_IQ_ENDPOINT` | ✅ Yes | Foundry agent endpoint URL |
-| `SUPABASE_URL` | ❌ No | Supabase project URL |
-| `SUPABASE_KEY` | ❌ No | Supabase public anon key |
-| `TELEGRAM_BOT_TOKEN` | ❌ No | Telegram bot token |
-| `TELEGRAM_ADMIN_CHAT_ID` | ❌ No | Telegram chat ID |
-| `ENABLE_TELEGRAM_NOTIFICATIONS` | ❌ No | Feature flag (default: true) |
-| `DRY_RUN` | ❌ No | Test mode without API calls |
-| `DEBUG` | ❌ No | Verbose logging |
+| `SUPABASE_URL` | ✅️ yes | Supabase project URL |
+| `SUPABASE_KEY` | ✅️ yes | Supabase public anon key |
+| `TELEGRAM_BOT_TOKEN` | ✅️ yes | Telegram bot token |
+| `TELEGRAM_ADMIN_CHAT_ID` | ✅️ yes | Telegram chat ID |
+| `ENABLE_TELEGRAM_NOTIFICATIONS` | ✅️ yes | Feature flag (default: true) |
+| `DRY_RUN` | ✅️ yes | Test mode without API calls |
+| `DEBUG` | ✅️ yes | Verbose logging |
 
 ---
 
@@ -404,10 +404,12 @@ Questions or feature requests? Start a [discussion](https://github.com/Kzknowled
 
 **KZDI Technologies Ltd**  
 Northern Nigeria 🇳🇬
-
-- Website: [kzdi.ai](https://kzdi.ai)
+kzdiofficial@gmail.com
+- Website: [kzdi.ai]( https://kzdi-web-site.vercel.app/ )
 - GitHub: [@Kzknowledge](https://github.com/Kzknowledge)
-- LinkedIn: [KZDI Technologies](https://linkedin.com/company/kzdi-technologies)
+- -LinkedIn:https://www.linkedin.com/in/kimiyyarzahiri?utm_source=share_via&utm_content=profile&utm_medium=member_android )
+
+- Facebook: https://www.facebook.com/kriptomech.facebook?mibextid=ZbWKwL )
 
 ---
 
