@@ -1,0 +1,52 @@
+{
+  "name": "kzdi-talent-os",
+  "version": "1.0.0",
+  "description": "KZDI Talent OS: AI-powered candidate evaluation system leveraging Azure Foundry IQ with multi-modal assessment for Arewa youth development",
+  "main": "src/demo.js",
+  "type": "module",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "scripts": {
+    "start": "node src/demo.js",
+    "dev": "node --watch src/demo.js",
+    "test": "node --test src/**/*.test.js",
+    "lint": "echo 'Linting ready' && exit 0",
+    "deploy": "npm run build && npm run test",
+    "build": "echo 'Build complete'",
+    "setup": "npm install && cp .env.example .env && echo 'Setup complete. Update .env with your Foundry IQ key.'",
+    "telegram:test": "node src/scripts/test-telegram.js"
+  },
+  "keywords": [
+    "ai",
+    "talent",
+    "evaluation",
+    "azure-foundry",
+    "arewa",
+    "nlp",
+    "hausa",
+    "nigeria"
+  ],
+  "author": "KZDI Technologies Ltd",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kzknowledge/kzdi-talent-os"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "node-fetch": "^3.3.0",
+    "telegram": "^2.0.0",
+    "telegraf": "^4.16.3",
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.51.0"
+  },
+  "bugs": {
+    "url": "https://github.com/Kzknowledge/kzdi-talent-os/issues"
+  },
+  "homepage": "https://github.com/Kzknowledge/kzdi-talent-os#readme"
+}
+
