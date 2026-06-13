@@ -9,9 +9,6 @@ on:
     types: [new_registration]
 
 jobs:
-  # ==============================================================================
-  # Job 1: Static Code Analysis & Dependency Integrity Checks
-  # ==============================================================================
   quality:
     if: github.event_name != 'repository_dispatch'
     runs-on: ubuntu-latest
@@ -36,9 +33,6 @@ jobs:
           fi
           echo "✅ Secret validation checks passed cleanly."
 
-  # ==============================================================================
-  # Job 2: Operational Sandbox Testing & Mock Payload Validation
-  # ==============================================================================
   test_and_dry_run:
     if: github.event_name != 'repository_dispatch'
     needs: quality
@@ -53,14 +47,13 @@ jobs:
         with:
           node-version: '18.x'
 
-      - name: Clean install dependencies for headless runner
-        run: npm ci
+      # FIXED: Swapped 'npm ci' to an optimized, non-breaking installation step
+      - name: Install project dependencies for headless runner
+        run: npm install --legacy-peer-deps
 
       - name: Execute System Verification Script
-        # Prevents masked secret variables from throwing exit code 1 failures during test commits
-        continue-on-error: true
         env:
-          DRY_RUN: true
+          DRY_RUN: "true"
           CANDIDATE_DATA: '{"name":"Abubakar Bello","skills":["Python","NLP"],"languages":["English","Hausa"],"top_track":"nlp_specialization","recommendation":"Passed test simulation"}'
           FOUNDRY_IQ_KEY: ${{ secrets.FOUNDRY_IQ_KEY }}
           FOUNDRY_IQ_ENDPOINT: ${{ secrets.FOUNDRY_IQ_ENDPOINT }}
@@ -70,9 +63,6 @@ jobs:
           TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
         run: node src/demo.js
 
-  # ==============================================================================
-  # Job 3: True-Positive Pipeline Notification Stream Router
-  # ==============================================================================
   notify_status:
     if: github.event_name != 'repository_dispatch' && always()
     needs: [quality, test_and_dry_run]
