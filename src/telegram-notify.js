@@ -1,192 +1,117 @@
-/**
- * KZDI Talent OS — Telegram Notifications
- * ============================================================================
- * Sends candidate evaluation results and batch notifications via Telegram.
- * Uses Telegram Bot API with error handling and reconnection logic.
- * ============================================================================
- */
+// src/telegram-notify.js
+import dotenv from 'dotenv';
 
-import axios from 'axios';
-
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
-const CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID || '';
-const TELEGRAM_API = 'https://api.telegram.org';
+dotenv.config();
 
 /**
- * Send a notification about a single candidate evaluation
- * @param {Object} result - Evaluation result containing candidate and scores
- * @returns {Promise<boolean>} Success status
+ * Generates a clean visual progress bar for confidence metrics
+ * @param {number} score - Confidence score between 0.0 and 1.0
+ * @returns {string} - Progress bar using square emojis
  */
-export async function notifyEvaluation(result) {
-  if (!BOT_TOKEN || !CHAT_ID) {
-    console.warn('[⚠️  TELEGRAM] Credentials missing. Skipping notification.');
-    return false;
+const generateProgressBar = (score) => {
+  const visualTotal = 10;
+  const normalizedScore = Math.min(Math.max(score, 0), 1); // Guardrail to keep score between 0 and 1
+  const filledBlocks = Math.round(normalizedScore * visualTotal);
+  const emptyBlocks = visualTotal - filledBlocks;
+  return "🟩".repeat(filledBlocks) + "⬜".repeat(emptyBlocks);
+};
+
+/**
+ * Dispatches a single formatted markdown evaluation message to Telegram
+ * @param {string} text - Formatted message string
+ */
+async function sendTelegramMessage(text) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+
+  if (!token || !chatId) {
+    console.warn("⚠️ Telegram configuration missing. Skipping alert dispatch.");
+    return;
   }
+
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
 
   try {
-    const { candidate, evaluation } = result;
-    const topTrack = evaluation.top_track || 'Unknown';
-    const confidence = evaluation.tracks?.[0]?.confidence || 0;
-
-    const message = `
-✅ <b>Candidate Evaluation Complete</b>
-
-👤 <b>Candidate:</b> ${candidate.name}
-🎯 <b>Top Track:</b> ${topTrack}
-📊 <b>Confidence:</b> ${(confidence * 100).toFixed(1)}%
-💬 <b>Skills:</b> ${candidate.skills.join(', ')}
-🌍 <b>Languages:</b> ${candidate.languages.join(', ')}
-🎓 <b>Goal:</b> ${candidate.goal}
-
-<i>Evaluation stored and ready for review.</i>
-    `.trim();
-
-    return await sendMessage(message, 'HTML');
-  } catch (error) {
-    console.error(`[❌ TELEGRAM] Failed to notify evaluation: ${error.message}`);
-    return false;
-  }
-}
-
-/**
- * Send batch completion notification
- * @param {Array} results - Array of evaluation results
- * @returns {Promise<boolean>} Success status
- */
-export async function notifyBatchComplete(results) {
-  if (!BOT_TOKEN || !CHAT_ID) {
-    console.warn('[⚠️  TELEGRAM] Credentials missing. Skipping batch notification.');
-    return false;
-  }
-
-  try {
-    // Find top performer
-    let topCandidate = null;
-    let maxConfidence = 0;
-
-    results.forEach(result => {
-      const confidence = result.evaluation.tracks?.[0]?.confidence || 0;
-      if (confidence > maxConfidence) {
-        maxConfidence = confidence;
-        topCandidate = result.candidate.name;
-      }
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: text,
+        parse_mode: 'Markdown' // Required to parse bolding, emojis, and styling layout
+      })
     });
 
-    const message = `
-📊 <b>Batch Evaluation Complete</b>
-
-✅ <b>Total Evaluated:</b> ${results.length}
-🏆 <b>Top Performer:</b> ${topCandidate || 'N/A'}
-📈 <b>Avg Confidence:</b> ${(results.reduce((sum, r) => sum + (r.evaluation.tracks?.[0]?.confidence || 0), 0) / results.length * 100).toFixed(1)}%
-
-<i>All results have been stored in Supabase.</i>
-    `.trim();
-
-    return await sendMessage(message, 'HTML');
-  } catch (error) {
-    console.error(`[❌ TELEGRAM] Failed to notify batch: ${error.message}`);
-    return false;
-  }
-}
-
-/**
- * Test Telegram connection
- * @returns {Promise<boolean>} Connection status
- */
-export async function testConnection() {
-  if (!BOT_TOKEN || !CHAT_ID) {
-    console.warn('[⚠️  TELEGRAM] Credentials not configured.');
-    return false;
-  }
-
-  try {
-    const message = `
-🧪 <b>KZDI Talent OS Connection Test</b>
-
-✅ Telegram bot is online and connected!
-⏰ Timestamp: ${new Date().toISOString()}
-    `.trim();
-
-    return await sendMessage(message, 'HTML');
-  } catch (error) {
-    console.error(`[❌ TELEGRAM] Connection test failed: ${error.message}`);
-    return false;
-  }
-}
-
-/**
- * Send a message via Telegram Bot API
- * @private
- * @param {string} text - Message text
- * @param {string} parseMode - 'HTML', 'Markdown', or 'MarkdownV2'
- * @returns {Promise<boolean>} Send status
- */
-async function sendMessage(text, parseMode = 'HTML') {
-  if (!BOT_TOKEN || !CHAT_ID) {
-    return false;
-  }
-
-  try {
-    const url = `${TELEGRAM_API}/bot${BOT_TOKEN}/sendMessage`;
-
-    const response = await axios.post(url, {
-      chat_id: CHAT_ID,
-      text: text,
-      parse_mode: parseMode,
-      disable_web_page_preview: true,
-      disable_notification: false
-    }, {
-      timeout: 10000,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (response.data.ok) {
-      console.log('[✅ TELEGRAM] Message sent successfully');
-      return true;
-    } else {
-      console.error(`[❌ TELEGRAM] API error: ${response.data.description}`);
-      return false;
+    if (!response.ok) {
+      const errBody = await response.text();
+      throw new Error(`Telegram API responded with status ${response.status}: ${errBody}`);
     }
   } catch (error) {
-    console.error(`[❌ TELEGRAM] Send failed: ${error.message}`);
-    return false;
+    console.error("❌ Failed to broadcast notification over Telegram:", error);
   }
 }
 
 /**
- * Send error notification
- * @param {string} errorMessage - Error description
- * @param {string} context - Where the error occurred
- * @returns {Promise<boolean>} Send status
+ * Notifies admin of a single candidate evaluation with high-visibility layout
+ * @param {Object} result - Evaluation model object from the AI engine
  */
-export async function notifyError(errorMessage, context = 'Unknown') {
-  if (!BOT_TOKEN || !CHAT_ID) {
-    return false;
-  }
+export async function notifyEvaluation(result) {
+  if (process.env.ENABLE_TELEGRAM_NOTIFICATIONS === 'false') return;
 
-  try {
-    const message = `
-❌ <b>Error in KZDI Talent OS</b>
+  // Handles dynamic mapping checking for either structural variant (.confidence or track specific numbers)
+  const score = result.confidence || result[`${result.top_track}_confidence`] || 0;
 
-📍 <b>Context:</b> ${context}
-💬 <b>Error:</b> ${errorMessage}
-⏰ <b>Time:</b> ${new Date().toISOString()}
+  const message = `
+👤 **Candidate:** ${result.name || 'Unknown Applicant'}
+🎯 **Top Track Placement:** ${String(result.top_track).replace(/_/g, ' ').toUpperCase()}
+📊 **Confidence Score:** ${(score * 100).toFixed(1)}%
+${generateProgressBar(score)}
 
-<i>Please investigate immediately.</i>
-    `.trim();
+🛠️ **Extracted Competencies:**
+${Array.isArray(result.skills) ? result.skills.map(s => `• ${s}`).join('\n') : '• Mixed technical skills'}
 
-    return await sendMessage(message, 'HTML');
-  } catch (error) {
-    console.error(`[❌ TELEGRAM] Error notification failed: ${error.message}`);
-    return false;
-  }
+🌍 **Languages:** ${Array.isArray(result.languages) ? result.languages.join(', ') : 'English, Hausa'}
+💡 **Stated Learning Goal:** _"${result.recommendation || 'Evaluation stored and ready for review.'}"_
+`;
+
+  await sendTelegramMessage(message.trim());
 }
 
-export default {
-  notifyEvaluation,
-  notifyBatchComplete,
-  testConnection,
-  notifyError
-};
+/**
+ * Notifies admin of a complete processing run summary
+ * @param {Array<Object>} results - Collection of evaluated candidate records
+ */
+export async function notifyBatchComplete(results) {
+  if (process.env.ENABLE_TELEGRAM_NOTIFICATIONS === 'false') return;
+  if (!results || results.length === 0) return;
+
+  const totalEvaluated = results.length;
+  
+  // Calculate average confidence dynamically
+  const totalConfidence = results.reduce((sum, res) => {
+    const score = res.confidence || res[`${res.top_track}_confidence`] || 0;
+    return sum + score;
+  }, 0);
+  const avgConfidence = totalConfidence / totalEvaluated;
+
+  // Locate highest performing profile in the payload array
+  const topPerformerObj = results.reduce((prev, current) => {
+    const prevScore = prev.confidence || prev[`${prev.top_track}_confidence`] || 0;
+    const currScore = current.confidence || current[`${current.top_track}_confidence`] || 0;
+    return (currScore > prevScore) ? current : prev;
+  });
+
+  const batchMessage = `
+📊 **Batch Evaluation Complete**
+${"─".repeat(20)}
+
+✅ **Total Evaluated:** ${totalEvaluated} Profiles
+🏆 **Top Performer:** ${topPerformerObj.name || 'N/A'}
+📈 **Avg Confidence:** ${(avgConfidence * 100).toFixed(1)}%
+${generateProgressBar(avgConfidence)}
+
+_All evaluation matrices have been securely synchronized and persisted into Supabase._
+`;
+
+  await sendTelegramMessage(batchMessage.trim());
+}
