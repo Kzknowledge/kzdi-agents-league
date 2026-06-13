@@ -43,10 +43,6 @@ jobs:
           node-version: '18.x'
       - name: Install dependencies
         run: npm ci
-      
-      # Setting DRY_RUN=true turns off live external network modifications
-      # Mocking the CANDIDATE_DATA payload to perfectly mirror what our new progress bar expects!
-       Silber text formatting
       - name: Run Verification Test
         env:
           DRY_RUN: true
@@ -59,9 +55,6 @@ jobs:
           TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
         run: node src/demo.js
 
-  # ==============================================================================
-  # Consolidated Telemetry Status Router
-  # ==============================================================================
   notify_status:
     if: github.event_name != 'repository_dispatch' && always()
     needs: [quality, test_and_dry_run]
@@ -73,7 +66,7 @@ jobs:
         run: |
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d "chat_id=${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}" \
-            -d "text=✅ **KZDI Talent OS CI/CD Passed**%0A%0ARepository: Kzknowledge/kzdi-agents-league%0ABranch: ${ { github.ref_name } }%0ACommit: ${{ github.sha }}&parse_mode=Markdown"
+            -d "text=✅ **KZDI Talent OS CI/CD Passed**%0A%0ARepository: Kzknowledge/kzdi-agents-league%0ABranch: ${{ github.ref_name }}%0ACommit: ${{ github.sha }}&parse_mode=Markdown"
 
       - name: Send Global Failure Alert
         if: ${{ needs.quality.result == 'failure' || needs.test_and_dry_run.result == 'failure' }}
