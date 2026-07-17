@@ -1,18 +1,106 @@
-import type { EvaluationRequest, EvaluationResult } from "../types/evaluation";
-
 /**
- * Contract for a pluggable AI evaluation backend. The active provider is
- * selected in ai/config.ts via AI_PROVIDER and instantiated in
- * ai/gateway/gateway.ts — swapping providers should never require
- * changes to EvaluationService.
+ * ============================================================================
+ * KZDI Talent OS Enterprise v3.0
+ * KZDI Intelligence Gateway (KIG)
+ * ----------------------------------------------------------------------------
+ * File: src/ai/provider.ts
+ * Description:
+ *   Provider contracts and shared types for the AI Gateway.
+ *
+ * All AI providers MUST implement this interface.
+ * ============================================================================
  */
+
+export type AIProviderName =
+  | "gemini"
+  | "openai"
+  | "anthropic"
+  | "mock";
+
+export interface CandidateProfile {
+  id?: string;
+
+  name: string;
+
+  skills: string[];
+
+  experience: string;
+
+  languages: string[];
+
+  community?: string;
+
+  goal?: string;
+}
+
+export interface EvaluationTrack {
+
+  name: string;
+
+  confidence: number;
+
+}
+
+export interface EvaluationResult {
+
+  candidate: CandidateProfile;
+
+  evaluation: {
+
+    tracks: EvaluationTrack[];
+
+    top_track: string;
+
+    recommendation: string;
+
+    reasoning: string;
+
+  };
+
+  metadata: {
+
+    provider: AIProviderName;
+
+    model: string;
+
+    latency_ms: number;
+
+    request_id: string;
+
+    timestamp: string;
+
+  };
+
+}
+
+export interface AIHealthStatus {
+
+  healthy: boolean;
+
+  provider: AIProviderName;
+
+  latency_ms: number;
+
+  message: string;
+
+}
+
 export interface AIProvider {
-  /** Machine-readable provider identifier, e.g. "gemini". */
-  readonly name: string;
 
-  /** Scores a candidate submission and returns a structured result. */
-  evaluate(request: EvaluationRequest): Promise<EvaluationResult>;
+  readonly provider: AIProviderName;
 
-  /** Lightweight reachability check, used by health/readiness endpoints. */
-  healthCheck(): Promise<boolean>;
+  readonly model: string;
+
+  /**
+   * Evaluate candidate.
+   */
+  evaluateCandidate(
+    candidate: CandidateProfile
+  ): Promise<EvaluationResult>;
+
+  /**
+   * Health check.
+   */
+  healthCheck(): Promise<AIHealthStatus>;
+
 }
