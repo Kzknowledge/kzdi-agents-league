@@ -1,130 +1,223 @@
-// KZDI Intelligence Gateway entry point
+/**
+ * ============================================================================
+ * KZDI Talent OS Enterprise v3.0
+ * KZDI Intelligence Gateway (KIG)
+ * ----------------------------------------------------------------------------
+ * File: src/ai/gateway/gateway.ts
+ *
+ * Enterprise AI Gateway
+ *
+ * Responsibilities
+ * - Provider registry
+ * - Request routing
+ * - Retry execution
+ * - Response validation
+ * - Telemetry hooks
+ * - Provider health checks
+ * ============================================================================
+ */
 
-import { AI_PROVIDER, AI_MODEL_CONFIG } from "../config";
-import { env } from "../../config/env";
-import { logger } from "../../config/logger";
-import { withRetry } from "../../utils/retry";
-import type { AIProvider } from "../provider";
-import type { EvaluationRequest, EvaluationResult } from "../../types/evaluation";
-import { EVALUATION_TRACK_LABELS } from "../../config/constants";
+import {
+  AIProvider,
+  CandidateProfile,
+  EvaluationResult,
+  AIHealthStatus,
+  AIProviderName
+} from "../provider";
 
-const GEMINI_ENDPOINT = (model: string) =>
-  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+import {
+  getProviderConfig
+} from "../config";
+
+import {
+  retry,
+  isTransientError
+} from "../../utils/retry";
+
+import {
+  createLogger
+} from "../../config/logger";
+
+const logger = createLogger("AI Gateway");
+
+export class AIGateway {
+
+  /**
+   * Registered providers
+   */
+  private readonly providers =
+    new Map<AIProviderName, AIProvider>();
+
+  /**
+   * Register provider.
+   */
+  register(
+    provider: AIProvider
+  ): void {
+
+    this.providers.set(
+      provider.provider,
+      provider
+    );
+
+    logger.info(
+      "AI provider registered",
+      {
+        provider: provider.provider,
+        metadata: {
+          model: provider.model
+        }
+      }
+    );
+
+  }
+
+  /**
+   * Retrieve provider.
+   */
+  getProvider(): AIProvider {
+
+    const config = getProviderConfig();
+
+    const provider =
+      this.providers.get(config.provider);
+
+    if (!provider) {
+
+      throw new Error(
+        `AI Provider '${config.provider}' not registered.`
+      );
+
+    }
+
+    return provider;
+
+  }
+
+  /**
+   * Evaluate candidate.
+   */
+  async evaluateCandidate(
+    candidate: CandidateProfile
+  ): Promise<EvaluationResult> {
+
+    const provider =
+      this.getProvider();
+
+    logger.info(
+      "Candidate evaluation started",
+      {
+        provider: provider.provider,
+        metadata: {
+          candidate: candidate.name
+        }
+      }
+    );
+
+    const result =
+      await retry(
+        () =>
+          provider.evaluateCandidate(
+            candidate
+          ),
+        {
+          retryIf:
+            isTransientError
+        }
+      );
+
+    logger.info(
+      "Candidate evaluation completed",
+      {
+        provider: provider.provider,
+        metadata: {
+          top_track:
+            result.evaluation.top_track
+        }
+      }
+    );
+
+    return result;
+
+  }
+
+  /**
+   * Provider health.
+   */
+  async healthCheck():
+    Promise<
+      Record<
+        string,
+        AIHealthStatus
+      >
+    > {
+
+    const status:
+      Record<
+        string,
+        AIHealthStatus
+      > = {};
+
+    for (
+      const [
+        name,
+        provider
+      ] of this.providers
+    ) {
+
+      try {
+
+        status[name] =
+          await provider.healthCheck();
+
+      }
+
+      catch (error) {
+
+        logger.error(
+          `Health check failed for ${name}`,
+          error
+        );
+
+        status[name] = {
+
+          provider: name,
+
+          healthy: false,
+
+          latency_ms: 0,
+
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unknown error"
+
+        };
+
+      }
+
+    }
+
+    return status;
+
+  }
+
+  /**
+   * Returns all registered providers.
+   */
+  listProviders():
+    AIProviderName[] {
+
+    return Array.from(
+      this.providers.keys()
+    );
+
+  }
+
+}
 
 /**
- * Builds the evaluation prompt handed to Gemini. Kept deliberately strict
- * about output shape — the response is parsed as JSON, not free text.
+ * Singleton Gateway
  */
-function buildPrompt(request: EvaluationRequest): string {
-  const trackLabel = EVALUATION_TRACK_LABELS[request.track];
-
-  return [
-    `You are evaluating a candidate for the "${trackLabel}" track at KZDI Talent OS.`,
-    `Score the following submission strictly on demonstrated competency, not phrasing or length.`,
-    ``,
-    `Candidate submission:`,
-    request.submissionText,
-    ``,
-    `Respond with JSON only, in exactly this shape:`,
-    `{`,
-    `  "confidenceScore": number between 0 and 1,`,
-    `  "skillMatrix": [{ "skill": string, "score": number 0-100 }],`,
-    `  "recommendedRoles": string[],`,
-    `  "cohensKappa": number between 0 and 1 representing scoring consistency,`,
-    `  "rationale": string, one to two sentences`,
-    `}`,
-  ].join("\n");
-}
-
-function parseGeminiResponse(raw: unknown, track: EvaluationRequest["track"]): EvaluationResult {
-  const text = (raw as any)?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (typeof text !== "string") {
-    throw new Error("Gemini response did not contain expected text content");
-  }
-
-  // Model may wrap JSON in a markdown fence despite instructions — strip it defensively.
-  const cleaned = text.trim().replace(/^```json\s*/i, "").replace(/```$/i, "");
-  const parsed = JSON.parse(cleaned);
-
-  return {
-    track,
-    confidenceScore: Number(parsed.confidenceScore),
-    skillMatrix: parsed.skillMatrix ?? [],
-    recommendedRoles: parsed.recommendedRoles ?? [],
-    cohensKappa: Number(parsed.cohensKappa),
-    rationale: String(parsed.rationale ?? ""),
-    raw,
-  };
-}
-
-class GeminiProvider implements AIProvider {
-  readonly name = "gemini";
-
-  async evaluate(request: EvaluationRequest): Promise<EvaluationResult> {
-    return withRetry(
-      async () => {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), AI_MODEL_CONFIG.timeoutMs);
-
-        try {
-          const response = await fetch(
-            `${GEMINI_ENDPOINT(AI_MODEL_CONFIG.model)}?key=${env.GEMINI_API_KEY}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              signal: controller.signal,
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: buildPrompt(request) }] }],
-                generationConfig: {
-                  temperature: AI_MODEL_CONFIG.temperature,
-                  maxOutputTokens: AI_MODEL_CONFIG.maxOutputTokens,
-                  responseMimeType: "application/json",
-                },
-              }),
-            }
-          );
-
-          if (!response.ok) {
-            throw new Error(`Gemini API responded with status ${response.status}`);
-          }
-
-          const body = await response.json();
-          return parseGeminiResponse(body, request.track);
-        } finally {
-          clearTimeout(timeout);
-        }
-      },
-      { label: "gemini.evaluate" }
-    );
-  }
-
-  async healthCheck(): Promise<boolean> {
-    try {
-      const response = await fetch(
-        `${GEMINI_ENDPOINT(AI_MODEL_CONFIG.model)}?key=${env.GEMINI_API_KEY}`,
-        { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] }) }
-      );
-      return response.ok;
-    } catch (error) {
-      logger.warn("Gemini health check failed", {
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return false;
-    }
-  }
-}
-
-/** Provider registry — extend here if a second AI_PROVIDER value is introduced. */
-function createProvider(providerName: string): AIProvider {
-  switch (providerName) {
-    case "gemini":
-      return new GeminiProvider();
-    default:
-      throw new Error(
-        `Unknown AI_PROVIDER "${providerName}". Only "gemini" is currently implemented.`
-      );
-  }
-}
-
-/** Singleton gateway instance used throughout the service. */
-export const aiGateway: AIProvider = createProvider(AI_PROVIDER);
+export const aiGateway =
+  new AIGateway();
