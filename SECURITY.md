@@ -6,7 +6,7 @@ If you discover a security vulnerability, please **report it responsibly** rathe
 
 ### How to Report
 
-1. **Email**: security@kzdi.ai (monitored daily)
+1. **Email**:kzdiofficial@gmail.com (monitored daily)
 2. **Do not** open a public issue
 3. **Do not** disclose the vulnerability publicly before we've fixed it
 4. Include:
