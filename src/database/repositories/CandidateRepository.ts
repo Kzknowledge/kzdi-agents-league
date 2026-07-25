@@ -19,7 +19,7 @@ import { getServiceClient } from "../client";
 
 import { createLogger } from "../../config/logger";
 
-import { CandidateProfile } from "../../ai/provider";
+import { CandidateProfile } from "../../ai/providers/providers";
 
 const logger = createLogger("CandidateRepository");
 
@@ -194,7 +194,8 @@ export class CandidateRepository {
         metadata: {
           id
         }
-      );
+      }
+    );
 
   }
 

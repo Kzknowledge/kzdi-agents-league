@@ -143,7 +143,7 @@ export function errorHandler(
 
   res: Response,
 
-  next: NextFunction
+  _next: NextFunction
 
 ) {
 

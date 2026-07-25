@@ -22,7 +22,7 @@ Planned providers:
 
 - OpenAI
 - Anthropic Claude
-- Azure AI Foundry
+- Ollama / Mistral (self-hosted fallback)
 - Mock Provider (Testing)
 
  Design Goals
@@ -181,7 +181,7 @@ Designed for future integration with:
 
 - Supabase
 - OpenTelemetry
-- Azure Monitor
+- Make.com webhook forwarding
 - Datadog
 - Prometheus
 
@@ -367,7 +367,7 @@ gpt-5
 
 claude-opus
 
-azure-foundry
+ollama-mistral
 
 local-llm
 ```

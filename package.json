@@ -1,28 +1,30 @@
 {
   "name": "kzdi-talent-os",
   "version": "1.0.0",
-  "description": "KZDI Talent OS: AI-powered candidate evaluation system leveraging Azure Foundry IQ with multi-modal assessment for Arewa youth development",
-  "main": "src/demo.js",
+  "description": "KZDI Talent OS: AI-powered candidate evaluation system with a multi-provider AI Gateway (Gemini primary) for Arewa youth development",
+  "main": "src/demo.ts",
   "type": "module",
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
   },
   "scripts": {
-    "start": "node src/demo.js",
-    "dev": "node --watch src/demo.js",
-    "test": "node --test src/**/*.test.js",
-    "lint": "echo 'Linting ready' && exit 0",
+    "start": "tsx src/demo.ts",
+    "dev": "tsx --watch src/demo.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/**/*.test.ts",
+    "lint": "eslint src --ext .ts",
     "deploy": "npm run build && npm run test",
-    "build": "echo 'Build complete'",
-    "setup": "npm install && cp .env.example .env && echo 'Setup complete. Update .env with your Foundry IQ key.'",
-    "telegram:test": "node src/scripts/test-telegram.js"
+    "build": "tsc",
+    "setup": "npm install && cp .env.example .env && echo 'Setup complete. Update .env with your Gemini API key.'",
+    "telegram:test": "tsx src/scripts/test-telegram.ts"
   },
   "keywords": [
     "ai",
     "talent",
     "evaluation",
-    "azure-foundry",
+    "gemini",
+    "multi-provider-ai",
     "arewa",
     "nlp",
     "hausa",
@@ -35,15 +37,23 @@
     "url": "https://github.com/Kzknowledge/kzdi-agents-league"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
     "axios": "^1.6.0",
     "dotenv": "^16.0.3",
+    "express": "^4.19.2",
     "node-fetch": "^3.3.0",
-    "telegram": "^2.0.0",
     "telegraf": "^4.16.3",
-    "@supabase/supabase-js": "^2.39.0"
+    "telegram": "^2.0.0",
+    "zod": "^3.22.0"
   },
   "devDependencies": {
-    "eslint": "^8.51.0"
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.0",
+    "@typescript-eslint/eslint-plugin": "^8.65.0",
+    "@typescript-eslint/parser": "^8.65.0",
+    "eslint": "^8.51.0",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.4"
   },
   "bugs": {
     "url": "https://github.com/Kzknowledge/kzdi-agents-league/issues"

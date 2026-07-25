@@ -37,6 +37,7 @@ interface EnvironmentConfig {
   // Supabase
   SUPABASE_URL: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
+  SUPABASE_ANON_KEY?: string;
 
   // Telegram
   TELEGRAM_BOT_TOKEN?: string;
@@ -175,6 +176,9 @@ export const env: EnvironmentConfig = {
     getEnv(
       "SUPABASE_SERVICE_ROLE_KEY"
     ),
+
+  SUPABASE_ANON_KEY:
+    process.env.SUPABASE_ANON_KEY,
 
   TELEGRAM_BOT_TOKEN:
     process.env.TELEGRAM_BOT_TOKEN,

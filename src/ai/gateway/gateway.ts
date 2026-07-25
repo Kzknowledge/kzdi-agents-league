@@ -23,7 +23,7 @@ import {
   EvaluationResult,
   AIHealthStatus,
   AIProviderName
-} from "../provider";
+} from "../providers/providers";
 
 import {
   getProviderConfig

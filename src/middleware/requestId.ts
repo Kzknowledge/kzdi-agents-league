@@ -20,6 +20,7 @@ import crypto from "crypto";
  * Extend Express Request
  */
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace -- declaration merging with Express's own namespace, not a new namespace
   namespace Express {
     interface Request {
       requestId: string;

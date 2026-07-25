@@ -11,6 +11,8 @@
  * ============================================================================
  */
 
+import type { EvaluationResponse } from "../schemas/evaluation.schema";
+
 export type AIProviderName =
   | "gemini"
   | "openai"
@@ -33,29 +35,14 @@ export interface CandidateProfile {
   goal?: string;
 }
 
-export interface EvaluationTrack {
-
-  name: string;
-
-  confidence: number;
-
-}
+export type EvaluationTrack =
+  EvaluationResponse["tracks"][number];
 
 export interface EvaluationResult {
 
   candidate: CandidateProfile;
 
-  evaluation: {
-
-    tracks: EvaluationTrack[];
-
-    top_track: string;
-
-    recommendation: string;
-
-    reasoning: string;
-
-  };
+  evaluation: EvaluationResponse;
 
   metadata: {
 

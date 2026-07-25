@@ -18,7 +18,7 @@
  */
 
 import { env } from "../config/env";
-import type { AIProviderName } from "./provider";
+import type { AIProviderName } from "./providers/providers";
 
 export interface AIRequestConfig {
   temperature: number;

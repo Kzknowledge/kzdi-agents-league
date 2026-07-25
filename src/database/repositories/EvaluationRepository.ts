@@ -282,7 +282,8 @@ export class EvaluationRepository {
         metadata: {
           id
         }
-      );
+      }
+    );
 
   }
 

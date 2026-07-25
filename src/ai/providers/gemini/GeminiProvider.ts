@@ -21,7 +21,7 @@ import {
   AIHealthStatus,
   CandidateProfile,
   EvaluationResult
-} from "../../provider";
+} from "../providers";
 
 import { GeminiClient } from "./GeminiClient";
 
@@ -46,6 +46,7 @@ import {
 } from "../../../config/logger";
 
 import { env } from "../../../config/env";
+import crypto from "crypto";
 
 const logger = createLogger("GeminiProvider");
 
@@ -161,8 +162,19 @@ export class GeminiProvider implements AIProvider {
 
       evaluation,
 
-      timestamp:
-        new Date().toISOString()
+      metadata: {
+
+        provider: this.provider,
+
+        model: this.model,
+
+        latency_ms: latency,
+
+        request_id: crypto.randomUUID(),
+
+        timestamp: new Date().toISOString()
+
+      }
 
     };
 

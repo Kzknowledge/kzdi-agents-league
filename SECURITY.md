@@ -40,13 +40,13 @@ console.log(`Token: ${apiToken}`);
 #### ✅ Do:
 ```javascript
 // Use environment variables
-const apiKey = process.env.FOUNDRY_IQ_KEY;
+const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
-  throw new Error('FOUNDRY_IQ_KEY not configured');
+  throw new Error('GEMINI_API_KEY not configured');
 }
 
 // Log safely
-console.log(`[✅ API] Connected to Foundry`); // No secrets
+console.log(`[✅ API] Connected to Gemini`); // No secrets
 ```
 
 ### 2. Secret Management
@@ -57,8 +57,9 @@ console.log(`[✅ API] Connected to Foundry`); // No secrets
 # .github/workflows/deploy.yml
 - name: Deploy
   env:
-    FOUNDRY_IQ_KEY: ${{ secrets.FOUNDRY_IQ_KEY }}
-    SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+    GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+    SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
   run: npm start
 ```
 
@@ -66,8 +67,9 @@ console.log(`[✅ API] Connected to Foundry`); // No secrets
 
 ```bash
 # .env file (git-ignored)
-FOUNDRY_IQ_KEY=sk-your-secret-key
-SUPABASE_KEY=your-secret-key
+GEMINI_API_KEY=your-gemini-key
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-secret-key
 
 # Never commit .env
 git status | grep .env  # Should not appear
@@ -76,7 +78,7 @@ git status | grep .env  # Should not appear
 #### Production Deployment
 
 Use managed secret services:
-- **Azure Key Vault** (recommended for Azure Foundry users)
+- **GitHub Actions Secrets** (current CI/CD)
 - **AWS Secrets Manager**
 - **HashiCorp Vault**
 
@@ -298,10 +300,10 @@ LOG_LEVEL=info
 
 ## Compliance & Standards
 
-### Azure Foundry IQ
+### Gemini API
 - ✅ Data encrypted in transit (TLS 1.2+)
-- ✅ Azure AD integration available
-- ✅ Audit logging built-in
+- ✅ Google Cloud IAM integration available
+- ✅ Audit logging via Google Cloud
 
 ### Supabase
 - ✅ Row Level Security (RLS)

@@ -11,7 +11,7 @@
  * ============================================================================
  */
 
-import type { AIProviderName } from "../ai/provider";
+import type { AIProviderName } from "../ai/providers/providers";
 
 /**
  * Supported Talent Tracks

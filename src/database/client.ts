@@ -75,13 +75,21 @@ export function getAnonClient(): SupabaseClient {
     return anonClient;
   }
 
+  if (!env.SUPABASE_ANON_KEY) {
+
+    throw new Error(
+      "[ENV] SUPABASE_ANON_KEY is required to initialize the anon client."
+    );
+
+  }
+
   logger.info("Initializing Supabase Public Client");
 
   anonClient = createClient(
 
     env.SUPABASE_URL,
 
-    env.SUPABASE_KEY,
+    env.SUPABASE_ANON_KEY,
 
     {
 

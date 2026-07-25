@@ -20,14 +20,14 @@ jobs:
       - name: Initialize Node.js environment
         uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version: '24.x'
 
       - name: Install core project dependencies
         run: npm install --legacy-peer-deps
 
       - name: Perform local static secret scanning
         run: |
-          if grep -r "sk-" --include="*.js" --include="*.json" src/ | grep -v node_modules; then
+          if grep -r "sk-" --include="*.ts" --include="*.json" src/ | grep -v node_modules; then
             echo "❌ Severe Error: Potential exposed credentials found in code blocks."
             exit 1
           fi
@@ -45,7 +45,7 @@ jobs:
       - name: Initialize Node.js environment
         uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version: '24.x'
 
       # FIXED: Swapped 'npm ci' to an optimized, non-breaking installation step
       - name: Install project dependencies for headless runner
@@ -54,14 +54,13 @@ jobs:
       - name: Execute System Verification Script
         env:
           DRY_RUN: "true"
-          CANDIDATE_DATA: '{"name":"Abubakar Bello","skills":["Python","NLP"],"languages":["English","Hausa"],"top_track":"nlp_specialization","recommendation":"Passed test simulation"}'
-          FOUNDRY_IQ_KEY: ${{ secrets.FOUNDRY_IQ_KEY }}
-          FOUNDRY_IQ_ENDPOINT: ${{ secrets.FOUNDRY_IQ_ENDPOINT }}
+          AI_PROVIDER: "gemini"
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
-        run: node src/demo.js
+        run: npm start
 
   notify_status:
     if: github.event_name != 'repository_dispatch' && always()

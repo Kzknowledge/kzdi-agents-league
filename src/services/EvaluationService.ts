@@ -104,10 +104,10 @@ export class EvaluationService {
           result.evaluation,
 
         provider:
-          aiGateway.provider,
+          result.metadata.provider,
 
         model:
-          aiGateway.model,
+          result.metadata.model,
 
         latencyMs:
           Date.now() - started,
@@ -127,10 +127,10 @@ export class EvaluationService {
           "candidate_evaluation",
 
         provider:
-          aiGateway.provider,
+          result.metadata.provider,
 
         model:
-          aiGateway.model,
+          result.metadata.model,
 
         success: true,
 
@@ -179,10 +179,10 @@ export class EvaluationService {
           "candidate_evaluation",
 
         provider:
-          aiGateway.provider,
+          aiGateway.getProvider().provider,
 
         model:
-          aiGateway.model,
+          aiGateway.getProvider().model,
 
         success: false,
 

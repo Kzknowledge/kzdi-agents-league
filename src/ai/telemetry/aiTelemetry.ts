@@ -108,7 +108,7 @@ export async function recordAIRequest(
     "AI Request",
     {
       provider: record.provider,
-      metadata: record
+      metadata: record as unknown as Record<string, unknown>
     }
   );
 
@@ -123,7 +123,7 @@ export async function recordAIRequest(
    *
    * await SupabaseTelemetry.insert(record)
    *
-   * await AzureMonitor.send(record)
+   * await MakeWebhook.send(record)
    *
    */
 

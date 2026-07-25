@@ -132,7 +132,9 @@ export class GeminiClient {
 
           }
 
-          return await response.json();
+          return (
+            await response.json()
+          ) as GeminiGenerateResponse;
 
         }
 

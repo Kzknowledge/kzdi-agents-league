@@ -76,7 +76,24 @@ export class HealthService {
 
     logger.info("Running health check...");
 
-    const ai = await aiGateway.healthCheck();
+    const healthStatuses =
+      await aiGateway.healthCheck();
+
+    const activeProvider =
+      aiGateway.getProvider();
+
+    const ai =
+      healthStatuses[activeProvider.provider] ?? {
+
+        provider: activeProvider.provider,
+
+        healthy: false,
+
+        latency_ms: 0,
+
+        message: "Provider health status unavailable"
+
+      };
 
     const database = await checkDatabaseHealth();
 
@@ -114,7 +131,7 @@ export class HealthService {
             ai.provider,
 
           model:
-            aiGateway.model,
+            activeProvider.model,
 
           latency_ms:
             ai.latency_ms,
