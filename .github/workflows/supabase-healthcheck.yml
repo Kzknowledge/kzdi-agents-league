@@ -1,0 +1,47 @@
+name: KZDI Supabase Healthcheck
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * 1,4'
+
+permissions:
+  contents: read
+
+jobs:
+  healthcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check Supabase health RPC
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ]; then
+            echo "Required Supabase secrets are not configured."
+            exit 1
+          fi
+
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+
+          http_code="$(curl --silent --show-error --fail-with-body \
+            --request POST \
+            --url "${SUPABASE_URL%/}/rest/v1/rpc/kzdi_health_check" \
+            --header "apikey: ${SUPABASE_ANON_KEY}" \
+            --header "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            --header "Content-Type: application/json" \
+            --data '{}' \
+            --output "$response_file" \
+            --write-out '%{http_code}')"
+
+          echo "Supabase healthcheck HTTP status: ${http_code}"
+          echo "Supabase healthcheck response: $(cat "$response_file")"
+
+          case "$http_code" in
+            2*) ;;
+            *) exit 1 ;;
+          esac
