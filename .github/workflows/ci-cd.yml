@@ -27,10 +27,17 @@ jobs:
 
       - name: Perform local static secret scanning
         run: |
-          if grep -r "sk-" --include="*.ts" --include="*.json" src/ | grep -v node_modules; then
-            echo "❌ Severe Error: Potential exposed credentials found in code blocks."
+          set -euo pipefail
+
+          # Detect credential-shaped values, not harmless documentation such as "sk-".
+          if grep -rEn --include="*.ts" --include="*.json" \
+            -e 'sk-[A-Za-z0-9_-]{20,}' \
+            -e 'AIza[0-9A-Za-z_-]{30,}' \
+            src/ | grep -v '/node_modules/'; then
+            echo "❌ Severe Error: Potential exposed credentials found in source files."
             exit 1
           fi
+
           echo "✅ Secret validation checks passed cleanly."
 
   test_and_dry_run:
