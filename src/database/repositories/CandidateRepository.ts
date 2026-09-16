@@ -51,24 +51,12 @@ export class CandidateRepository {
         .upsert(
           {
             name: candidate.name,
-
             skills: candidate.skills,
-
-            experience_level:
-              candidate.experience,
-
-            languages:
-              candidate.languages,
-
-            community:
-              candidate.community,
-
-            learning_goal:
-              candidate.goal,
-
-            updated_at:
-              new Date().toISOString()
-
+            experience_level: candidate.experience,
+            languages: candidate.languages,
+            community: candidate.community,
+            learning_goal: candidate.goal,
+            updated_at: new Date().toISOString()
           },
           {
             onConflict: "name"
@@ -78,42 +66,31 @@ export class CandidateRepository {
         .single();
 
     if (error) {
-
-      logger.error(
-        "Candidate upsert failed",
-        error
-      );
-
+      logger.error("Candidate upsert failed", error);
       throw error;
-
     }
 
     return data;
-
   }
 
   /**
-   * Find candidate by ID.
+   * Find candidate by canonical UUID.
    */
   async findById(
     id: string
   ) {
-
     const { data, error } =
       await this.db
         .from("candidates")
         .select("*")
-        .eq("id", id)
+        .eq("candidate_uuid", id)
         .single();
 
     if (error) {
-
       throw error;
-
     }
 
     return data;
-
   }
 
   /**
@@ -122,7 +99,6 @@ export class CandidateRepository {
   async findByName(
     name: string
   ) {
-
     const { data, error } =
       await this.db
         .from("candidates")
@@ -131,13 +107,10 @@ export class CandidateRepository {
         .maybeSingle();
 
     if (error) {
-
       throw error;
-
     }
 
     return data;
-
   }
 
   /**
@@ -146,57 +119,44 @@ export class CandidateRepository {
   async list(
     limit = 50
   ) {
-
     const { data, error } =
       await this.db
         .from("candidates")
         .select("*")
-        .order(
-          "updated_at",
-          {
-            ascending: false
-          }
-        )
+        .order("updated_at", { ascending: false })
         .limit(limit);
 
     if (error) {
-
       throw error;
-
     }
 
     return data;
-
   }
 
   /**
-   * Delete candidate.
+   * Delete candidate by canonical UUID.
    */
   async delete(
     id: string
   ) {
-
     const { error } =
       await this.db
         .from("candidates")
         .delete()
-        .eq("id", id);
+        .eq("candidate_uuid", id);
 
     if (error) {
-
       throw error;
-
     }
 
     logger.info(
       "Candidate deleted",
       {
         metadata: {
-          id
+          candidateUuid: id
         }
       }
     );
-
   }
 
-        }
+}
