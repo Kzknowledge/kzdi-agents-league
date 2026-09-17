@@ -42,7 +42,7 @@ jobs:
         continue-on-error: true
 
       - name: TypeScript type check
-        run: npm run type-check --if-present
+        run: npm run typecheck --if-present
         continue-on-error: true
 
   operational-testing-and-dry-run:
