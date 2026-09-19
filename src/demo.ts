@@ -8,8 +8,8 @@
  * Runs one end-to-end candidate evaluation through the AI Gateway to prove
  * the wiring: EvaluationService -> AIGateway -> GeminiProvider -> Supabase.
  *
- * Requires a valid .env (see .env.example) with SUPABASE_URL,
- * SUPABASE_SERVICE_ROLE_KEY, and GEMINI_API_KEY set.
+ * Normal runs require SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and GEMINI_API_KEY.
+ * DRY_RUN only requires the provider configuration needed to resolve the gateway.
  * ============================================================================
  */
 
