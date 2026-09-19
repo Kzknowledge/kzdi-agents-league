@@ -30,25 +30,39 @@ jobs:
       - name: Initialize Node.js environment
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: '24.x'
+          node-version: '24.21.0'
 
       - name: Install core project dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci
 
-      - name: Perform local static secret scanning
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run dependency security audit
+        run: npm audit --audit-level=moderate
+
+      - name: Run TypeScript type check
+        run: npm run typecheck
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Build application
+        run: npm run build
+
+      - name: Perform repository-wide credential-pattern scan
+        shell: bash
         run: |
           set -euo pipefail
 
-          # Detect credential-shaped values, not harmless documentation such as "sk-".
-          if grep -rEn --include="*.ts" --include="*.json" \
-            -e 'sk-[A-Za-z0-9_-]{20,}' \
-            -e 'AIza[0-9A-Za-z_-]{30,}' \
-            src/ | grep -v '/node_modules/'; then
-            echo "❌ Severe Error: Potential exposed credentials found in source files."
+          # Scan tracked text files while excluding dependency/build metadata.
+          # This is a lightweight guard; GitHub secret scanning remains authoritative.
+          if git grep -nI -E             -e 'sk-[A-Za-z0-9_-]{20,}'             -e 'AIza[0-9A-Za-z_-]{30,}'             -e 'gh[pousr]_[A-Za-z0-9_]{20,}'             -e 'github_pat_[A-Za-z0-9_]{20,}'             -- . ':!package-lock.json'; then
+            echo "❌ Potential exposed credential pattern found in tracked files."
             exit 1
           fi
 
-          echo "✅ Secret validation checks passed cleanly."
+          echo "✅ Repository credential-pattern scan passed."
 
   test_and_dry_run:
     if: github.event_name == 'push'
@@ -63,11 +77,10 @@ jobs:
       - name: Initialize Node.js environment
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: '24.x'
+          node-version: '24.21.0'
 
-      # FIXED: Swapped 'npm ci' to an optimized, non-breaking installation step
       - name: Install project dependencies for headless runner
-        run: npm install --legacy-peer-deps
+        run: npm ci
 
       - name: Execute System Verification Script
         env:
