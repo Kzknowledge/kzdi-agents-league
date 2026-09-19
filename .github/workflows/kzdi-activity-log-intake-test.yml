@@ -1,0 +1,43 @@
+name: KZDI Activity Log — GitHub Intake Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  emit-activity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send real workflow run context to Airtable
+        env:
+          AIRTABLE_ACTIVITY_WEBHOOK_URL: ${{ secrets.AIRTABLE_ACTIVITY_WEBHOOK_URL }}
+        run: |
+          test -n "$AIRTABLE_ACTIVITY_WEBHOOK_URL" || {
+            echo "::error::Missing AIRTABLE_ACTIVITY_WEBHOOK_URL repository secret"
+            exit 1
+          }
+
+          python - <<'PY' > payload.json
+import json, os
+payload = {
+  "source_system": "GitHub Actions",
+  "repository": os.environ["GITHUB_REPOSITORY"],
+  "workflow_name": os.environ["GITHUB_WORKFLOW"],
+  "workflow_ref": os.environ["GITHUB_WORKFLOW_REF"],
+  "workflow_run_id": int(os.environ["GITHUB_RUN_ID"]),
+  "workflow_run_number": int(os.environ["GITHUB_RUN_NUMBER"]),
+  "event": os.environ["GITHUB_EVENT_NAME"],
+  "status": "in_progress",
+  "branch": os.environ["GITHUB_REF_NAME"],
+  "commit_sha": os.environ["GITHUB_SHA"],
+  "actor": os.environ["GITHUB_ACTOR"],
+  "event_id": os.environ["GITHUB_RUN_ID"] + ":" + os.environ["GITHUB_RUN_ATTEMPT"],
+  "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+}
+print(json.dumps(payload))
+PY
+
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --data-binary @payload.json \
+            "$AIRTABLE_ACTIVITY_WEBHOOK_URL"
