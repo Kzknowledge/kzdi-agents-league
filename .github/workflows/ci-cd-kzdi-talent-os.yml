@@ -20,8 +20,6 @@ concurrency:
 
 env:
   NODE_VERSION: '24.21.0'
-  NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-  NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
 
 jobs:
   code-quality-and-security:
@@ -60,6 +58,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
