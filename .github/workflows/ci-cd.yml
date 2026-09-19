@@ -57,7 +57,12 @@ jobs:
 
           # Scan tracked text files while excluding dependency/build metadata.
           # This is a lightweight guard; GitHub secret scanning remains authoritative.
-          if git grep -nI -E             -e 'sk-[A-Za-z0-9_-]{20,}'             -e 'AIza[0-9A-Za-z_-]{30,}'             -e 'gh[pousr]_[A-Za-z0-9_]{20,}'             -e 'github_pat_[A-Za-z0-9_]{20,}'             -- . ':!package-lock.json'; then
+          if git grep -nI -E \
+            -e 'sk-[A-Za-z0-9_-]{20,}' \
+            -e 'AIza[0-9A-Za-z_-]{30,}' \
+            -e 'gh[pousr]_[A-Za-z0-9_]{20,}' \
+            -e 'github_pat_[A-Za-z0-9_]{20,}' \
+            -- . ':!package-lock.json'; then
             echo "❌ Potential exposed credential pattern found in tracked files."
             exit 1
           fi
