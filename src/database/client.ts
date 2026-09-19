@@ -39,6 +39,12 @@ export function getServiceClient(): SupabaseClient {
 
   logger.info("Initializing Supabase Service Client");
 
+  if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error(
+      "[ENV] SUPABASE_SERVICE_ROLE_KEY is required for service-role database access."
+    );
+  }
+
   serviceClient = createClient(
 
     env.SUPABASE_URL,
@@ -163,6 +169,9 @@ export async function checkDatabaseHealth() {
 }
 
 /**
- * Export default service client.
+ * Lazy service client accessor.
+ * Prevents privileged client creation during module import.
  */
-export const db = getServiceClient();
+export function getDb(): SupabaseClient {
+  return getServiceClient();
+}

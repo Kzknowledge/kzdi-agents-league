@@ -36,7 +36,7 @@ interface EnvironmentConfig {
 
   // Supabase
   SUPABASE_URL: string;
-  SUPABASE_SERVICE_ROLE_KEY: string;
+  SUPABASE_SERVICE_ROLE_KEY?: string;
   SUPABASE_ANON_KEY?: string;
 
   // Telegram
@@ -173,9 +173,7 @@ export const env: EnvironmentConfig = {
   ),
 
   SUPABASE_SERVICE_ROLE_KEY:
-    getEnv(
-      "SUPABASE_SERVICE_ROLE_KEY"
-    ),
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
 
   SUPABASE_ANON_KEY:
     process.env.SUPABASE_ANON_KEY,
@@ -243,6 +241,16 @@ export const env: EnvironmentConfig = {
  * Fail fast before the application starts serving requests.
  */
 export function validateEnvironment(): void {
+
+  if (!env.SUPABASE_URL) {
+    throw new Error("[ENV] SUPABASE_URL is required.");
+  }
+
+  if (!env.DRY_RUN && !env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error(
+      "[ENV] SUPABASE_SERVICE_ROLE_KEY is required outside DRY_RUN mode."
+    );
+  }
 
   switch (env.AI_PROVIDER) {
 
