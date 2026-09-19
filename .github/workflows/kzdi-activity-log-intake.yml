@@ -1,0 +1,66 @@
+name: KZDI Activity Log — GitHub Intake
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  emit-activity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Build real GitHub Actions activity payload
+        env:
+          AIRTABLE_ACTIVITY_WEBHOOK_URL: ${{ secrets.AIRTABLE_ACTIVITY_WEBHOOK_URL }}
+        run: |
+          set -euo pipefail
+
+          test -n "$AIRTABLE_ACTIVITY_WEBHOOK_URL" || {
+            echo "::error::Missing AIRTABLE_ACTIVITY_WEBHOOK_URL repository secret"
+            exit 1
+          }
+
+          python - <<'PY' > payload.json
+import json
+import os
+
+repository = os.environ["GITHUB_REPOSITORY"]
+run_id = os.environ["GITHUB_RUN_ID"]
+run_attempt = os.environ["GITHUB_RUN_ATTEMPT"]
+
+payload = {
+    "activity_id": f"github:{repository}:{run_id}:{run_attempt}",
+    "idempotency_key": f"github:{repository}:{run_id}:{run_attempt}",
+    "source_system": "GitHub Actions",
+    "activity_type": "automation",
+    "repository": repository,
+    "workflow_name": os.environ["GITHUB_WORKFLOW"],
+    "workflow_ref": os.environ["GITHUB_WORKFLOW_REF"],
+    "workflow_run_id": int(run_id),
+    "workflow_run_number": int(os.environ["GITHUB_RUN_NUMBER"]),
+    "run_attempt": int(run_attempt),
+    "event": os.environ["GITHUB_EVENT_NAME"],
+    "status": "in_progress",
+    "processing_status": "raw",
+    "validation_status": "pending",
+    "branch": os.environ["GITHUB_REF_NAME"],
+    "commit_sha": os.environ["GITHUB_SHA"],
+    "actor": os.environ["GITHUB_ACTOR"],
+    "run_url": f"{os.environ['GITHUB_SERVER_URL']}/{repository}/actions/runs/{run_id}",
+}
+
+print(json.dumps(payload, separators=(",", ":")))
+PY
+
+          echo "Payload schema prepared for GitHub run ${GITHUB_RUN_ID}."
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --data-binary @payload.json \
+            "$AIRTABLE_ACTIVITY_WEBHOOK_URL"
+
+          echo
+          echo "Airtable activity payload delivered."
