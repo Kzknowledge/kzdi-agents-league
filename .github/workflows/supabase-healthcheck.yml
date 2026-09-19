@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: kzdi-supabase-healthcheck
+  cancel-in-progress: true
+
 jobs:
   healthcheck:
     runs-on: ubuntu-latest
